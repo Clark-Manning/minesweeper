@@ -1,11 +1,9 @@
 import random
 
-# TODO: configure number of bombs per difficulty, and add as member function called get_bomb_count
-# TODO: disperse correct number of bombs within gameboard
-# TODO: update non bomb board squares with correct values (bombs = 9, empty = 0)
-# TODO: create board overlay that user interacts with
-# TODO: implement functions for actions: guess empty box, guess numbered box, guess mine box, flag box 
-# TODO: mine counter, restart functionality, timer
+# TODO: timer - pygame
+# TODO: restart functionality
+# TODO: Mine counter, make mine counter a class member variable
+# TODO: research pygame
 
 class Difficulty:
     BEGINNER = "beginner"
@@ -13,6 +11,10 @@ class Difficulty:
     EXPERT = "expert"
 
 class GameBoard:
+    class ActionTypes:
+        GUESS = "guess"
+        FLAG = "flag"
+
     MINE_INDICATOR = 9
     DEFAULT_INDICATOR = 0
 
@@ -33,64 +35,91 @@ class GameBoard:
     def create_board(self):
         rows, cols = self.get_dimensions() 
         total_cells = rows * cols
-        board = []
+        board_list = []
         num_mine = self.get_mine_count()
-        board.extend([self.MINE_INDICATOR] * num_mine)
-        board.extend([DEFAULT_INDICATOR] * (total_cells - num_mine))
+        board_list.extend([self.MINE_INDICATOR] * num_mine)
+        board_list.extend([self.DEFAULT_INDICATOR] * (total_cells - num_mine))
         '''for row in range(rows):
             line = [0] * cols
             board.append(line)'''
-        random.shuffle(board)
-        two_d_board = []
+        random.shuffle(board_list)
+        board = []
+        canvas = []
         for row in range(rows):
-            line = board[row * cols:(row * cols) + cols]
-            two_d_board.append(line)
-        print(board)
-        self.board = two_d_board
+            line = board_list[row * cols:(row * cols) + cols]
+            board.append(line)
+            canvas.append([-1] * cols)
+        self.board = board
+        self.canvas = canvas
     
-    def update_tile_values(self):
+    # TODO: abstract checking rows into a function, should be able to call function 3 times in update_tile_values
+
+    def __update_tile_values(self):
         current_board = self.board
         number_of_rows = len(current_board)
-        number_of cols = len(row)
-        for row in range(number_of_rows):
-            for col in range(len(row)):
+        number_of_cols = len(current_board[0])
+        for row in range(number_of_rows):   
+            for col in range(number_of_cols):
                 neighbors =  []
-                if current_board[row][col] == MINE_INDICATOR:
-                    return
+                if current_board[row][col] == self.MINE_INDICATOR:
+                    continue
                 previous_row = row - 1
                 next_row = row + 1
                 previous_col = col - 1
                 next_col = col + 1
+                # checking previous row
                 if previous_row >= 0:
                     if previous_col >= 0:
-                        neigbors.append(current_board[previous_row][previous_col])
-                    neigbors.append(current_board[previous_row][col])
-                    if next_col > number:
-                        return
-                    neigbors.append(current_board[previous_row][next_col])
+                        neighbors.append(current_board[previous_row][previous_col])
+                    neighbors.append(current_board[previous_row][col])
+                    if next_col < number_of_cols:  
+                        neighbors.append(current_board[previous_row][next_col])
+                # checking current row
+                if previous_col >= 0:
+                    neighbors.append(current_board[row][previous_col])
+                if next_col < number_of_cols:
+                    neighbors.append(current_board[row][next_col])
+                # checking next row
+                if next_row < number_of_rows:
+                    if previous_col >= 0:
+                        neighbors.append(current_board[next_row][previous_col])
+                    neighbors.append(current_board[next_row][col])
+                    if next_col < number_of_cols:  
+                        neighbors.append(current_board[next_row][next_col])
+                # update current_board value
+                nieghbor_mine_count = neighbors.count(self.MINE_INDICATOR)
+                current_board[row][col] = nieghbor_mine_count
+
+    def handle_action(self, row, col, action_type):
+        match action_type:
+            case self.ActionTypes.GUESS:
+                self.handle_guess(row, col,)
+            case self.ActionTypes.FLAG:
+                self.handle_flag(row, col)
+            case _:
+                print("error: invalid action")
+
+    # TODO: implement functions for actions: guess empty box - introduce recursion for handling empty guesses   
+    def handle_guess(self, row, col):
+        tile_value = self.board[row][col]
+        if tile_value == self.DEFAULT_INDICATOR:
+            # expose box as well as any adjacent or diagonal empty spots
+
+            print("empty tile selected")
+        elif tile_value == self.MINE_INDICATOR:
+            # end game and update canvas with all mines
+            for row in range(len(self.board)):
+                for col in range(len(self.board[0])):
+                    if self.board[row][col] == self.MINE_INDICATOR:
+                        self.canvas[row][col] = self.MINE_INDICATOR
+            print("GAME OVER")
+        else:
+            self.canvas[row][col] = tile_value
+
+    def handle_flag(self, row, col):
+        print("handling flag")
 
 
-            line = board[row * cols:(row * cols) + cols]
-            two_d_board.append(line)
-
-        '''previous row of current column index -1 through +1
-        current row of current column index -1 and +1
-        next row of current column index -1 through +1
-        if row of interest is < 0 or >=  num of rows: ignore
-        if column of interest is < 0 or >= num of cols: ignore
-        then add value to list of find_neighbors
-        check list of neighbors for num of mines and store var
-        above var is the tiles new value'''
-
-
-
-
-    
-    '''def x(self):
-        rows = self.board
-        for row in self.board:
-            for col in row:'''
-    
     def get_mine_count(self):
         match self.difficulty:
             case Difficulty.EXPERT:
@@ -106,14 +135,20 @@ class GameBoard:
         for row in self.board:
             print(row)
 
+    def display_canvas(self):
+        for row in self.canvas:
+            print(row)
+
     def __init__(self, difficulty=Difficulty.BEGINNER):
         self.update_difficulty(difficulty)
         self.mine_count = self.get_mine_count()
         self.create_board()
+        self.__update_tile_values()
 
         
-    
-    
 if __name__ == "__main__":
     board1 = GameBoard(Difficulty.BEGINNER)
     board1.display_board()
+    print("-----")
+    board1.handle_guess(1, 1)
+    board1.display_canvas()
