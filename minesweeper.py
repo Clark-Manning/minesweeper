@@ -169,6 +169,7 @@ class GameBoard:
             self.canvas[row][col] = tile_value
 
     def handle_flag(self, row, col):
+        self.canvas[row][col] = self.FLAG_INDICATATOR
         print("handling flag")
 
 
@@ -193,13 +194,24 @@ class GameBoard:
 
     def restart_game(self):
         # function to restart the game when the restart button is clicked
-        # likely need to put all the game functions within a loop to restart, a restart function may not work
+        # TODO: loop through this once win/lose parameters have been defined
         self.visited = []
+        board1 = self(Difficulty.BEGINNER)
+        board1.display_board()
+        print("-----------")
+        board1.handle_guess(1, 1)
+        board1.display_canvas()
         print("restart")
     
     def mine_counter(self, mine_count):
-        # function to display remaining mines/flags and update when user lays down flag
-        print("mine counter")
+        # function to display flags/mine left, but does not prevent you from stopping after 0, and update when user lays down flag
+        flag_count = mine_count
+        if self.ActionTypes.FLAG:
+            mine_count = mine - 1
+        self.flag_count = mine_count
+        print(self.flag_count)
+        return mine_count
+        
 
     def __init__(self, difficulty=Difficulty.BEGINNER):
         self.update_difficulty(difficulty)
@@ -208,8 +220,4 @@ class GameBoard:
         self.__update_tile_values()
 
 if __name__ == "__main__":
-    board1 = GameBoard(Difficulty.BEGINNER)
-    board1.display_board()
-    print("-----")
-    board1.handle_guess(1, 1)
-    board1.display_canvas()
+    GameBoard.restart_game(GameBoard)
